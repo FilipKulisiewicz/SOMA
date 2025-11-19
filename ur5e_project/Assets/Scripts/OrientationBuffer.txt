@@ -1,0 +1,67 @@
+// using UnityEngine;
+// using Unity.Robotics.ROSTCPConnector;
+// using RosMessageTypes.Geometry;
+// using System.Collections.Generic;
+// using Unity.Robotics.ROSTCPConnector.ROSGeometry;
+// using System;
+// using System.IO;
+
+// public struct PositionRotation{
+//     public Vector3 position;
+//     public Quaternion rotation;
+
+//     public PositionRotation(Vector3 position, Quaternion rotation){
+//         this.position = position;
+//         this.rotation = rotation;
+//     }
+// }
+
+// public class OrientationBuffer : MonoBehaviour{
+//     [SerializeField]
+//     private string rosTopic = "tool0";
+//     [SerializeField]
+//     private bool useFile = false;
+//     [SerializeField]
+//     private string fileName;
+//     [SerializeField]
+//     // private static CustomBuffer<PositionRotation> buffer;
+//     private TransformStampedMsg TransformMsg;
+//     private Vector3 rosTranslation;
+//     private Quaternion rosQuaternion;
+//     private double rosTime;
+
+//     private void OnEnable(){
+//         // SphereManager.TransformRequest += GetDelayedValue;
+//         // SphereManager.TransformRequestFrame += GetNextFrameDelayedValue;
+//     }
+    
+//     private void OnDisable(){
+//         // SphereManager.TransformRequest -= GetDelayedValue;
+//         // SphereManager.TransformRequestFrame -= GetNextFrameDelayedValue;
+//     }
+
+//     // void Awake(){
+//     //     if(useFile == true){
+//     //         TextAsset csvFile = Resources.Load<TextAsset>(fileName); // Load the CSV file from the Resources folder
+//     //         ParseCSV(csvFile, buffer);
+//     //     }
+//     //     else{
+//     //         ROSConnection.GetOrCreateInstance().Subscribe<TransformStampedMsg>(rosTopic, AddToBuffer);
+//     //     }
+//     // }    
+
+//     // public void AddToBuffer(TransformStampedMsg transformMessage){
+//     //     //translation //potentially TODO
+//     //     rosTranslation = new Vector3((float)transformMessage.transform.translation.x, (float)transformMessage.transform.translation.y, (float)transformMessage.transform.translation.z);
+//     //     //rotations
+//     //     if(string.Equals(rosTopic, "tool0")){
+//     //         rosQuaternion = ConvertFromRobotCoordinatesToUnityCoordinatesUnwinded(transformMessage.transform.rotation);
+//     //     }
+//     //     else if (string.Equals(rosTopic, "IMU")){
+//     //         rosQuaternion = ConvertFromIMUCoordinatesToUnityCoordinatesUnwinded(transformMessage.transform.rotation);
+//     //     }
+//     //     //time
+//     //     rosTime = (double)transformMessage.header.stamp.sec + ((double)transformMessage.header.stamp.nanosec / 1e+09);
+//         // buffer.Add(new PositionRotation(rosTranslation, rosQuaternion), rosTime);
+//     // }
+// }

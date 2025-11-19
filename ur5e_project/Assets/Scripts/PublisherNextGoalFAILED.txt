@@ -1,0 +1,140 @@
+using UnityEngine;
+using Unity.Robotics.ROSTCPConnector;
+using RosMessageTypes.Moveit;
+using RosMessageTypes.Std;
+using RosMessageTypes.Geometry;
+using RosMessageTypes.Shape;
+
+public class PublisherNextGoal : MonoBehaviour
+{
+    public Transform goalTransform;
+    ROSConnection ros;
+
+    public string serviceName = "/plan_kinematic_path";
+
+    void Start()
+    {
+        ros = ROSConnection.GetOrCreateInstance();
+        ros.RegisterRosService<GetMotionPlanRequest, GetMotionPlanResponse>(serviceName);
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            SendPlanRequest();
+        }
+    }
+
+    void SendPlanRequest()
+    {
+        Debug.Log("Sending Motion Plan Request");
+
+        // ============================
+        // 1. HEADER
+        // ============================
+        HeaderMsg header = new HeaderMsg();
+        header.frame_id = "base_link";
+
+        // ============================
+        // 2. POSITION CONSTRAINT
+        // ============================
+        SolidPrimitiveMsg primitive = new SolidPrimitiveMsg();
+        primitive.type = SolidPrimitiveMsg.BOX;
+        primitive.dimensions = new double[] { 0.01, 0.01, 0.01 };
+
+        PoseMsg pose = new PoseMsg(
+            new PointMsg(
+                goalTransform.position.x,
+                goalTransform.position.y,
+                goalTransform.position.z),
+            new QuaternionMsg(
+                goalTransform.rotation.x,
+                goalTransform.rotation.y,
+                goalTransform.rotation.z,
+                goalTransform.rotation.w)
+        );
+
+        BoundingVolumeMsg region = new BoundingVolumeMsg();
+        region.primitives = new SolidPrimitiveMsg[] { primitive };
+        region.primitive_poses = new PoseMsg[] { pose };
+
+        PositionConstraintMsg posConstraint = new PositionConstraintMsg(
+            header,
+            "tool0",
+            new Vector3Msg(0, 0, 0),
+            region,
+            1.0
+        );
+
+        // ============================
+        // 3. ORIENTATION CONSTRAINT
+        // ============================
+        OrientationConstraintMsg oriConstraint = new OrientationConstraintMsg(
+            header,
+            new QuaternionMsg(
+                goalTransform.rotation.x,
+                goalTransform.rotation.y,
+                goalTransform.rotation.z,
+                goalTransform.rotation.w
+            ),
+            "tool0",
+            0.01,
+            0.01,
+            0.01,
+            OrientationConstraintMsg.XYZ_EULER_ANGLES,
+            1.0
+        );
+
+        // ============================
+        // 4. FULL Constraints[]
+        // ============================
+        ConstraintsMsg goal = new ConstraintsMsg();
+        goal.position_constraints = new PositionConstraintMsg[] { posConstraint };
+        goal.orientation_constraints = new OrientationConstraintMsg[] { oriConstraint };
+
+        // ============================
+        // 5. MOTION PLAN REQUEST
+        // ============================
+        MotionPlanRequestMsg mp = new MotionPlanRequestMsg();
+
+        mp.workspace_parameters = new WorkspaceParametersMsg();
+        mp.start_state = new RobotStateMsg();
+
+        mp.goal_constraints = new ConstraintsMsg[] { goal };
+        mp.path_constraints = new ConstraintsMsg();  // required but empty
+        mp.trajectory_constraints = new TrajectoryConstraintsMsg();
+        mp.reference_trajectories = new GenericTrajectoryMsg[0];
+
+        mp.pipeline_id = "";
+        mp.planner_id = "";
+        mp.group_name = "ur_manipulator";
+
+        mp.num_planning_attempts = 1;
+        mp.allowed_planning_time = 2.0;
+        mp.max_velocity_scaling_factor = 1.0;
+        mp.max_acceleration_scaling_factor = 1.0;
+        mp.cartesian_speed_limited_link = "";
+        mp.max_cartesian_speed = 0.0;
+
+        // ============================
+        // 6. SERVICE REQUEST
+        // ============================
+        GetMotionPlanRequest req = new GetMotionPlanRequest();
+        req.motion_plan_request = mp;
+
+        ros.SendServiceMessage<GetMotionPlanResponse>(
+            serviceName,
+            req,
+            OnMotionPlanResponse
+        );
+    }
+
+    void OnMotionPlanResponse(GetMotionPlanResponse resp)
+    {
+        if (resp.motion_plan_response.error_code.val == MoveItErrorCodesMsg.SUCCESS)
+            Debug.Log("SUCCESS");
+        else
+            Debug.LogError("FAILED " + resp.motion_plan_response.error_code.val);
+    }
+}
