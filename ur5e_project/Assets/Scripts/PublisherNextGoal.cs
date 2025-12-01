@@ -9,15 +9,11 @@ public class RaycastGoalPublisher : MonoBehaviour
 
     [Header("Robot reference frame")]
     public Transform robotEnvironment;
-    // Transform that defines robot base_link frame in Unity
 
     [Header("Goal adjustments")]
-    public Vector3 positionOffsetRobot = new Vector3(0f, 0f, 0.2f);
-    // Offset added in ROBOT frame after transforming the clicked object
-
-    private bool useCustomOrientation = true;
+    public float aboveOffset = 0.002f; // = 2mm , 0.01f = 1cm;  
     public Vector3 customEulerAnglesRobot = new Vector3(180f, 0f, 0f);
-    // Example: 180° around X → end-effector faces down
+    public bool useCustomOrientation = true;
 
     public float rayDistance = 100f;
 
@@ -30,59 +26,97 @@ public class RaycastGoalPublisher : MonoBehaviour
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
-        {
             TryPublishGoalFromClick();
-        }
     }
+
+    // ----------------------------------------------------------------------
+    // MAIN CLICK LOGIC
+    // ----------------------------------------------------------------------
 
     void TryPublishGoalFromClick()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
         if (Physics.Raycast(ray, out RaycastHit hit, rayDistance))
-        {
             PublishGoal(hit.transform);
-        }
     }
 
-    void PublishGoal(Transform clickedObject)
+    // ----------------------------------------------------------------------
+    // MAIN GOAL PUBLISH LOGIC
+    // ----------------------------------------------------------------------
+
+    void PublishGoal(Transform obj)
     {
-        // 1) Convert clicked object's world pose → robot frame pose
-        Vector3 posInRobot = robotEnvironment.InverseTransformPoint(clickedObject.position);
-        Quaternion rotInRobot = Quaternion.Inverse(robotEnvironment.rotation) * clickedObject.rotation;
+        Vector3 worldHighest = GetHighestPointWorld(obj);
+        worldHighest += Vector3.up * aboveOffset;
 
-        // 2) Apply position offset (offset also in robot coordinates)
-        posInRobot += positionOffsetRobot;
+        Vector3 posRobot = ConvertPointToRobotFrame(worldHighest);
+        Quaternion rotRobot = GetGoalOrientation(obj);
 
-        // 3) Apply orientation override (if enabled)
-        if (useCustomOrientation)
-        {
-            Quaternion customRot = Quaternion.Euler(customEulerAnglesRobot);
-            rotInRobot = customRot;
-        }
+        Vector3 posRos = RosUnityConverter.UnityToRosPosition(posRobot);
+        Quaternion rotRos = RosUnityConverter.UnityToRosRotation(rotRobot);
 
-        // 4) Convert to ROS coordinates
-        posInRobot = RosUnityConverter.UnityToRosPosition(posInRobot);
-        rotInRobot = RosUnityConverter.UnityToRosRotation(rotInRobot); 
-
-        // 5) Build ROS PoseStamped message
-        PoseStampedMsg msg = new PoseStampedMsg();
-        msg.header.stamp.sec = (int)Time.time;
-        msg.header.frame_id = "base_link";  // robot coordinate frame
-
-        msg.pose.position.x = posInRobot.x;
-        msg.pose.position.y = posInRobot.y;
-        msg.pose.position.z = posInRobot.z;
-
-        msg.pose.orientation.x = rotInRobot.x;
-        msg.pose.orientation.y = rotInRobot.y;
-        msg.pose.orientation.z = rotInRobot.z;
-        msg.pose.orientation.w = rotInRobot.w;
-
+        PoseStampedMsg msg = BuildPoseStamped(posRos, rotRos);
         ros.Publish(topicName, msg);
 
-        Debug.Log(
-            $"Published GOAL for {clickedObject.name} | Pos (robot): {posInRobot} | Rot (robot): {rotInRobot.eulerAngles}"
-        );
+        Debug.Log($"Goal ABOVE {obj.name}");
+    }
+
+    // ----------------------------------------------------------------------
+    // POSITION HELPERS
+    // ----------------------------------------------------------------------
+
+    Vector3 GetHighestPointWorld(Transform obj)
+    {
+        Collider col = obj.GetComponent<Collider>();
+        if (col == null)
+        {
+            Debug.LogWarning("Object has no collider");
+            return obj.position;
+        }
+
+        Bounds b = col.bounds;
+        return new Vector3(b.center.x, b.max.y, b.center.z);
+    }
+
+    Vector3 ConvertPointToRobotFrame(Vector3 worldPoint)
+    {
+        return robotEnvironment.InverseTransformPoint(worldPoint);
+    }
+
+    // ----------------------------------------------------------------------
+    // ORIENTATION HELPERS
+    // ----------------------------------------------------------------------
+
+    Quaternion GetGoalOrientation(Transform obj)
+    {
+        if (useCustomOrientation)
+        {
+            return Quaternion.Euler(customEulerAnglesRobot);
+        }
+
+        return Quaternion.Inverse(robotEnvironment.rotation) * obj.rotation;
+    }
+
+    // ----------------------------------------------------------------------
+    // ROS MESSAGE BUILDER
+    // ----------------------------------------------------------------------
+
+    PoseStampedMsg BuildPoseStamped(Vector3 pos, Quaternion rot)
+    {
+        PoseStampedMsg msg = new PoseStampedMsg();
+        msg.header.stamp.sec = (int)Time.time;
+        msg.header.frame_id = "base_link";
+
+        msg.pose.position.x = pos.x;
+        msg.pose.position.y = pos.y;
+        msg.pose.position.z = pos.z;
+
+        msg.pose.orientation.x = rot.x;
+        msg.pose.orientation.y = rot.y;
+        msg.pose.orientation.z = rot.z;
+        msg.pose.orientation.w = rot.w;
+
+        return msg;
     }
 }

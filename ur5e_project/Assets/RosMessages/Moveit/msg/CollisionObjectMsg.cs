@@ -4,7 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
-
+using UnityEngine;
 namespace RosMessageTypes.Moveit
 {
     [Serializable]
@@ -85,6 +85,105 @@ namespace RosMessageTypes.Moveit
             this.subframe_poses = subframe_poses;
             this.operation = operation;
         }
+
+        // private CollisionObjectMsg(MessageDeserializer deserializer)
+        // {
+        //     // Deserialize header and pose first (these worked for your first object)
+        //     this.header = Std.HeaderMsg.Deserialize(deserializer);
+        //     this.pose = Geometry.PoseMsg.Deserialize(deserializer);
+
+        //     // Read id but add diagnostics if it's empty
+        //     try
+        //     {
+        //         deserializer.Read(out this.id);
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         // UnityEngine.Debug.LogError($"[CollisionObjectMsg] Exception reading id at offset  : {e}");
+        //         this.id = "";
+        //     }
+
+        //     // Immediately log if frame_id or id are empty — these indicate a misalignment
+        //     string frameId = (this.header != null && this.header.frame_id != null) ? this.header.frame_id : "";
+        //     if (string.IsNullOrEmpty(frameId) || string.IsNullOrEmpty(this.id))
+        //     {
+        //         UnityEngine.Debug.LogWarning(
+        //             $"[CollisionObjectMsg] Possible desync detected. header.frame_id='{frameId}', id='{this.id}'. "
+        //             // $"Deserializer offset= , remaining={deserializer.GetRemaining()}, next bytes(hex)={deserializer.PeekHex(64)}"
+        //         );
+        //     }
+
+        //     // continue as normal (but also guard each array read to avoid crashes)
+        //     try { this.type = ObjectRecognition.ObjectTypeMsg.Deserialize(deserializer); }
+        //     catch (Exception e)
+        //     {
+        //         UnityEngine.Debug.LogError($"[CollisionObjectMsg] Failed deserializing type at offset  : {e}");
+        //         this.type = new ObjectRecognition.ObjectTypeMsg();
+        //     }
+
+        //     try { deserializer.Read(out this.primitives, Shape.SolidPrimitiveMsg.Deserialize, deserializer.ReadLength()); }
+        //     catch (Exception e)
+        //     {
+        //         UnityEngine.Debug.LogError($"[CollisionObjectMsg] Failed deserializing primitives at offset  : {e}");
+        //         this.primitives = new Shape.SolidPrimitiveMsg[0];
+        //     }
+
+        //     try { deserializer.Read(out this.primitive_poses, Geometry.PoseMsg.Deserialize, deserializer.ReadLength()); }
+        //     catch (Exception e)
+        //     {
+        //         UnityEngine.Debug.LogError($"[CollisionObjectMsg] Failed deserializing primitive_poses at offset  : {e}");
+        //         this.primitive_poses = new Geometry.PoseMsg[0];
+        //     }
+
+        //     try { deserializer.Read(out this.meshes, Shape.MeshMsg.Deserialize, deserializer.ReadLength()); }
+        //     catch (Exception e)
+        //     {
+        //         UnityEngine.Debug.LogError($"[CollisionObjectMsg] Failed deserializing meshes at offset  : {e}");
+        //         this.meshes = new Shape.MeshMsg[0];
+        //     }
+
+        //     try { deserializer.Read(out this.mesh_poses, Geometry.PoseMsg.Deserialize, deserializer.ReadLength()); }
+        //     catch (Exception e)
+        //     {
+        //         UnityEngine.Debug.LogError($"[CollisionObjectMsg] Failed deserializing mesh_poses at offset  : {e}");
+        //         this.mesh_poses = new Geometry.PoseMsg[0];
+        //     }
+
+        //     try { deserializer.Read(out this.planes, Shape.PlaneMsg.Deserialize, deserializer.ReadLength()); }
+        //     catch (Exception e)
+        //     {
+        //         UnityEngine.Debug.LogError($"[CollisionObjectMsg] Failed deserializing planes at offset  : {e}");
+        //         this.planes = new Shape.PlaneMsg[0];
+        //     }
+
+        //     try { deserializer.Read(out this.plane_poses, Geometry.PoseMsg.Deserialize, deserializer.ReadLength()); }
+        //     catch (Exception e)
+        //     {
+        //         UnityEngine.Debug.LogError($"[CollisionObjectMsg] Failed deserializing plane_poses at offset  : {e}");
+        //         this.plane_poses = new Geometry.PoseMsg[0];
+        //     }
+
+        //     try { deserializer.Read(out this.subframe_names, deserializer.ReadLength()); }
+        //     catch (Exception e)
+        //     {
+        //         UnityEngine.Debug.LogError($"[CollisionObjectMsg] Failed deserializing subframe_names at offset  : {e}");
+        //         this.subframe_names = new string[0];
+        //     }
+
+        //     try { deserializer.Read(out this.subframe_poses, Geometry.PoseMsg.Deserialize, deserializer.ReadLength()); }
+        //     catch (Exception e)
+        //     {
+        //         UnityEngine.Debug.LogError($"[CollisionObjectMsg] Failed deserializing subframe_poses at offset  : {e}");
+        //         this.subframe_poses = new Geometry.PoseMsg[0];
+        //     }
+
+        //     try { deserializer.Read(out this.operation); }
+        //     catch (Exception e)
+        //     {
+        //         UnityEngine.Debug.LogError($"[CollisionObjectMsg] Failed deserializing operation at offset  : {e}");
+        //         this.operation = 0;
+        //     }
+        // }
 
         public static CollisionObjectMsg Deserialize(MessageDeserializer deserializer) => new CollisionObjectMsg(deserializer);
 
